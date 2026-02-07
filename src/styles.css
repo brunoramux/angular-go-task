@@ -1,2 +1,13 @@
 /* You can add global styles to this file, and also import other style files */
-@import "tailwindcss"
+@import url("https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,100..900;1,100..900&family=Rubik&display=swap");
+@import "tailwindcss";
+
+@utility scrollbar-hidden {
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+html {
+  font-family: "Archivo", sans-serif;
+}
