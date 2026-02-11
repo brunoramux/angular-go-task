@@ -87,31 +87,8 @@ export class TaskService {
     taskCurrentStatus: TaskStatus,
     newStatus: TaskStatus,
   ) {
-    let currentTaskList;
-    let newTaskList;
-    switch (taskCurrentStatus) {
-      case TaskStatusEnum.TODO:
-        currentTaskList = this.todoTasks$;
-        break;
-      case TaskStatusEnum.DOING:
-        currentTaskList = this.doingTasks$;
-        break;
-      case TaskStatusEnum.DONE:
-        currentTaskList = this.doneTasks$;
-        break;
-    }
-
-    switch (newStatus) {
-      case TaskStatusEnum.TODO:
-        newTaskList = this.todoTasks$;
-        break;
-      case TaskStatusEnum.DOING:
-        newTaskList = this.doingTasks$;
-        break;
-      case TaskStatusEnum.DONE:
-        newTaskList = this.doneTasks$;
-        break;
-    }
+    const currentTaskList = this.getListByStatus(taskCurrentStatus);
+    const newTaskList = this.getListByStatus(newStatus);
 
     const taskToUpdate = currentTaskList.value.find(
       (task) => task.id === taskId,
@@ -126,6 +103,19 @@ export class TaskService {
       currentTaskList.next([...currentTaskListWithoutTask]);
 
       newTaskList.next([...newTaskList.value, taskToUpdate]);
+    }
+  }
+
+  getListByStatus(status: TaskStatus): BehaviorSubject<ITask[]> {
+    switch (status) {
+      case TaskStatusEnum.TODO:
+        return this.todoTasks$;
+      case TaskStatusEnum.DOING:
+        return this.doingTasks$;
+      case TaskStatusEnum.DONE:
+        return this.doneTasks$;
+      default:
+        throw new Error('Status desconhecido');
     }
   }
 }
