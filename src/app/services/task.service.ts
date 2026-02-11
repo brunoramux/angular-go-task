@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, map } from 'rxjs';
+import { BehaviorSubject, map, tap } from 'rxjs';
 import { ITask } from '../interfaces/task.interface';
 import { ITaskFormControls } from '../interfaces/task-form-controls.interface';
 import { TaskStatusEnum } from '../enums/task-status.enum';
@@ -12,21 +12,30 @@ import { TaskStatus } from '../types/task-status';
   providedIn: 'root',
 })
 export class TaskService {
-  private todoTasks$ = new BehaviorSubject<ITask[]>([]);
+  private todoTasks$ = new BehaviorSubject<ITask[]>(
+    this.loadTasksFromLocalStorage('todoTasks'),
+  );
   // ACESSO APENAS A UMA COPIA DO OBSERVABLE PARA EVITAR MODIFICAÇÕES DIRETAS NOS DADOS
-  readonly todoTasks = this.todoTasks$
-    .asObservable()
-    .pipe(map((tasks) => structuredClone(tasks)));
+  readonly todoTasks = this.todoTasks$.asObservable().pipe(
+    map((tasks) => structuredClone(tasks)),
+    tap((tasks) => this.saveTasksOnLocalStorage('todoTasks', tasks)),
+  );
 
-  private doingTasks$ = new BehaviorSubject<ITask[]>([]);
-  readonly doingTasks = this.doingTasks$
-    .asObservable()
-    .pipe(map((tasks) => structuredClone(tasks)));
+  private doingTasks$ = new BehaviorSubject<ITask[]>(
+    this.loadTasksFromLocalStorage('doingTasks'),
+  );
+  readonly doingTasks = this.doingTasks$.asObservable().pipe(
+    map((tasks) => structuredClone(tasks)),
+    tap((tasks) => this.saveTasksOnLocalStorage('doingTasks', tasks)),
+  );
 
-  private doneTasks$ = new BehaviorSubject<ITask[]>([]);
-  readonly doneTasks = this.doneTasks$
-    .asObservable()
-    .pipe(map((tasks) => structuredClone(tasks)));
+  private doneTasks$ = new BehaviorSubject<ITask[]>(
+    this.loadTasksFromLocalStorage('doneTasks'),
+  );
+  readonly doneTasks = this.doneTasks$.asObservable().pipe(
+    map((tasks) => structuredClone(tasks)),
+    tap((tasks) => this.saveTasksOnLocalStorage('doneTasks', tasks)),
+  );
 
   addTask(task: ITaskFormControls) {
     const currentTasks = this.todoTasks$.getValue();
@@ -38,7 +47,6 @@ export class TaskService {
       status: TaskStatusEnum.TODO,
     };
     this.todoTasks$.next([...currentTasks, newTask]);
-    console.log('Tasks', this.todoTasks$.getValue());
   }
 
   saveTask(taskId: string, updatedTask: ITaskFormControls) {
@@ -103,6 +111,7 @@ export class TaskService {
       currentTaskList.next([...currentTaskListWithoutTask]);
 
       newTaskList.next([...newTaskList.value, taskToUpdate]);
+      console.log(newTaskList.value);
     }
   }
 
@@ -116,6 +125,27 @@ export class TaskService {
         return this.doneTasks$;
       default:
         throw new Error('Status desconhecido');
+    }
+  }
+
+  private saveTasksOnLocalStorage(key: string, tasks: ITask[]) {
+    try {
+      localStorage.setItem(key, JSON.stringify(tasks));
+    } catch (error) {
+      console.log('Erro ao salvar tarefas no localStorage:', error);
+    }
+  }
+
+  private loadTasksFromLocalStorage(key: string): ITask[] {
+    try {
+      const tasksJson = localStorage.getItem(key);
+      if (tasksJson) {
+        return JSON.parse(tasksJson) as ITask[];
+      }
+      return [];
+    } catch (error) {
+      console.log('Erro ao carregar tarefas do localStorage:', error);
+      return [];
     }
   }
 }
