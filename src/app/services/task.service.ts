@@ -6,6 +6,7 @@ import { TaskStatusEnum } from '../enums/task-status.enum';
 import { generateUniqueIdWithTimestamp } from '../utils/generate-unique-id';
 import { IComment } from '../interfaces/comment.interface';
 import { ICommentFormControls } from '../interfaces/comment-form-controls.interface';
+import { TaskStatus } from '../types/task-status';
 
 @Injectable({
   providedIn: 'root',
@@ -62,22 +63,6 @@ export class TaskService {
     this.todoTasks$.next(updatedTasks);
   }
 
-  moveTask(task: ITask, newStatus: TaskStatusEnum) {
-    this.deleteTask(task.id);
-    const updatedTask = { ...task, status: newStatus };
-    switch (newStatus) {
-      case TaskStatusEnum.TODO:
-        this.todoTasks$.next([...this.todoTasks$.getValue(), updatedTask]);
-        break;
-      case TaskStatusEnum.DOING:
-        this.doingTasks$.next([...this.doingTasks$.getValue(), updatedTask]);
-        break;
-      case TaskStatusEnum.DONE:
-        this.doneTasks$.next([...this.doneTasks$.getValue(), updatedTask]);
-        break;
-    }
-  }
-
   saveComments(taskId: string, comments: string) {
     const currentTasks = this.todoTasks$.getValue();
     const taskIndex = currentTasks.findIndex((task) => task.id === taskId);
@@ -94,6 +79,53 @@ export class TaskService {
       const updatedTasks = [...currentTasks];
       updatedTasks[taskIndex] = updatedTaskData;
       this.todoTasks$.next(updatedTasks);
+    }
+  }
+
+  updateTaskStatus(
+    taskId: string,
+    taskCurrentStatus: TaskStatus,
+    newStatus: TaskStatus,
+  ) {
+    let currentTaskList;
+    let newTaskList;
+    switch (taskCurrentStatus) {
+      case TaskStatusEnum.TODO:
+        currentTaskList = this.todoTasks$;
+        break;
+      case TaskStatusEnum.DOING:
+        currentTaskList = this.doingTasks$;
+        break;
+      case TaskStatusEnum.DONE:
+        currentTaskList = this.doneTasks$;
+        break;
+    }
+
+    switch (newStatus) {
+      case TaskStatusEnum.TODO:
+        newTaskList = this.todoTasks$;
+        break;
+      case TaskStatusEnum.DOING:
+        newTaskList = this.doingTasks$;
+        break;
+      case TaskStatusEnum.DONE:
+        newTaskList = this.doneTasks$;
+        break;
+    }
+
+    const taskToUpdate = currentTaskList.value.find(
+      (task) => task.id === taskId,
+    );
+
+    if (taskToUpdate) {
+      taskToUpdate.status = newStatus;
+      const currentTaskListWithoutTask = currentTaskList.value.filter(
+        (task) => task.id !== taskId,
+      );
+
+      currentTaskList.next([...currentTaskListWithoutTask]);
+
+      newTaskList.next([...newTaskList.value, taskToUpdate]);
     }
   }
 }
